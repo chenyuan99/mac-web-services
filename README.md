@@ -1,5 +1,9 @@
 # Server Build 2023
 
+## Requirements
+
+Python 3.10
+
 ## Migrated MacOS
 
 * File Server
