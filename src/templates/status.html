@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Status</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f7;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .status-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .service-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .operational {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .incident {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .outage {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .refresh-button {
+            background-color: #007aff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .refresh-button:hover {
+            background-color: #0056b3;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .resource-section {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .resource-section h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+            color: #333;
+        }
+        
+        .gpu-info {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .gpu-info p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Service Status</h1>
+            <div class="controls">
+                <button class="refresh-button" onclick="refreshStatus()">Refresh Status</button>
+                <a href="/logs" class="refresh-button">View Ollama Logs</a>
+            </div>
+        </div>
+        <div class="status-grid">
+            {% for service_name, status in services.items() %}
+            <div class="status-card">
+                <div class="service-name">{{ service_name }}</div>
+                <div class="status-indicator {{ status.status }}">{{ status.status }}</div>
+                <div class="status-details">
+                    {% if service_name == 'System Resources' %}
+                        <div class="resource-section">
+                            <h3>Server Time</h3>
+                            <div class="server-time" data-timestamp="{{ status.details.server_time.timestamp }}">
+                                <p class="current-time">Current Time: {{ status.details.server_time.current_time }}</p>
+                                <p>Timezone: {{ status.details.server_time.timezone }}</p>
+                                <p>Offset: {{ status.details.server_time.timezone_offset }}</p>
+                            </div>
+                        </div>
+                        <div class="resource-section">
+                            <h3>CPU</h3>
+                            <div class="cpu-info">
+                                <p class="usage">Usage: {{ status.details.cpu.usage }}</p>
+                                <p>Cores: {{ status.details.cpu.cores }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="resource-section">
+                            <h3>Memory</h3>
+                            <div class="memory-info">
+                                <p>Total: {{ status.details.memory.total }}</p>
+                                <p class="used">Used: {{ status.details.memory.used }}</p>
+                                <p class="percent">Usage: {{ status.details.memory.percent }}</p>
+                            </div>
+                        </div>
+                        
+                        {% if status.details.gpu %}
+                        <div class="resource-section">
+                            <h3>GPU</h3>
+                            {% for gpu in status.details.gpu %}
+                            <div class="gpu-info">
+                                <p>Name: {{ gpu.name }}</p>
+                                <p>Total Memory: {{ gpu.memory_total }}</p>
+                                <p>Used Memory: {{ gpu.memory_used }}</p>
+                                <p>Free Memory: {{ gpu.memory_free }}</p>
+                                <p>Memory Usage: {{ gpu.memory_percent }}</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <p>Latency: {{ status.latency }}</p>
+                        <p>Last checked: {{ status.last_checked }}</p>
+                        {% if status.details %}
+                            {% if status.details is string %}
+                                <p>Details: {{ status.details }}</p>
+                            {% else %}
+                                <p>Details: {{ status.details | tojson }}</p>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script>
+        function refreshStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    updateSystemResources(data['System Resources']);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function updateSystemResources(data) {
+            // Update server time
+            document.querySelector('.server-time .current-time').textContent = 
+                'Current Time: ' + data.details.server_time.current_time;
+            
+            // Update CPU
+            document.querySelector('.cpu-info .usage').textContent = 
+                'Usage: ' + data.details.cpu.usage;
+            
+            // Update Memory
+            document.querySelector('.memory-info .used').textContent = 
+                'Used: ' + data.details.memory.used;
+            document.querySelector('.memory-info .percent').textContent = 
+                'Usage: ' + data.details.memory.percent;
+            
+            // Update timestamp in data attribute for relative time
+            document.querySelector('.server-time').dataset.timestamp = 
+                data.details.server_time.timestamp;
+        }
+
+        // Auto refresh every 5 seconds
+        setInterval(refreshStatus, 5000);
+
+        // Initial load
+        refreshStatus();
+    </script>
+</body>
+</html>

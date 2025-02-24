@@ -56,7 +56,93 @@ Radius	Removed in Server 5.7.1	FreeRadius
 
 AirPort Management	Removed in Server 5.7.1	AirPort Utility
 
+## Mac Web Services
 
+A modern web application for monitoring and managing macOS services, with a focus on Ollama and system resources.
+
+### Service Status Page
+- Real-time monitoring of service status
+- System resource metrics (CPU, Memory, GPU)
+- Server time information with timezone
+- Auto-refreshing status updates
+- Modern, responsive UI
+
+### Ollama Integration
+- Ollama service status monitoring
+- Detailed logs viewer with auto-refresh and auto-scroll
+- Available models information
+
+### System Monitoring
+- CPU usage and core count
+- Memory usage (total, used, percentage)
+- GPU information for Mac (integrated and discrete)
+- Server time with timezone information
+
+## Requirements
+
+- Python 3.10+
+- macOS
+- Ollama (optional, for Ollama monitoring)
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/mac-web-services.git
+cd mac-web-services
+```
+
+2. Install dependencies:
+```bash
+pip3 install -r requirements.txt
+```
+
+## Usage
+
+1. Start the service:
+```bash
+python3 src/status_page.py
+```
+
+2. Open your web browser and navigate to:
+```
+http://localhost:5002
+```
+
+3. View the status page and monitor your services.
+4. Click "View Ollama Logs" to access the logs page.
+
+## Features
+
+### Status Page
+- Monitor service status
+- View system resource usage
+- Check server time
+- Auto-refresh capability
+
+### Logs Page
+- View Ollama service logs
+- Auto-scroll functionality
+- Real-time log updates
+- Configurable refresh rate
+
+## Legacy Services
+
+The following macOS Server services have been migrated or removed in recent versions:
+
+* File Server
+* Caching Server
+* Time Machine Server
+
+Since Apple has integrated these services into macOS, this application focuses on monitoring modern services and system resources.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+See [LICENSE](LICENSE) for details.
 
 ## References
 

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama Logs</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f7;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            color: #007aff;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .logs-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .log-controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .refresh-button {
+            background-color: #007aff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .refresh-button:hover {
+            background-color: #0056b3;
+        }
+        .log-entry {
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        .log-time {
+            color: #666;
+            margin-right: 10px;
+        }
+        .log-level {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .log-level.error { color: #dc3545; }
+        .log-level.warn { color: #ffc107; }
+        .log-level.info { color: #28a745; }
+        .auto-scroll {
+            margin-left: 10px;
+        }
+        #logContent {
+            max-height: 600px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="/">← Back to Status Page</a>
+        </div>
+        
+        <div class="header">
+            <h1>Ollama Logs</h1>
+        </div>
+
+        <div class="logs-container">
+            <div class="log-controls">
+                <button class="refresh-button" onclick="refreshLogs()">Refresh Logs</button>
+                <label class="auto-scroll">
+                    <input type="checkbox" id="autoScroll" checked> Auto-scroll
+                </label>
+                <label class="auto-scroll">
+                    <input type="checkbox" id="autoRefresh" checked> Auto-refresh
+                </label>
+            </div>
+            <div id="logContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let autoRefreshInterval;
+
+        function refreshLogs() {
+            fetch('/api/logs')
+                .then(response => response.json())
+                .then(data => {
+                    const logContent = document.getElementById('logContent');
+                    logContent.innerHTML = '';
+                    
+                    data.logs.forEach(log => {
+                        const logEntry = document.createElement('div');
+                        logEntry.className = 'log-entry';
+                        
+                        // Add timestamp
+                        const timeSpan = document.createElement('span');
+                        timeSpan.className = 'log-time';
+                        timeSpan.textContent = log.timestamp;
+                        logEntry.appendChild(timeSpan);
+                        
+                        // Add log content
+                        const contentSpan = document.createElement('span');
+                        contentSpan.textContent = log.content;
+                        logEntry.appendChild(contentSpan);
+                        
+                        logContent.appendChild(logEntry);
+                    });
+                    
+                    if (document.getElementById('autoScroll').checked) {
+                        logContent.scrollTop = logContent.scrollHeight;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function toggleAutoRefresh() {
+            if (document.getElementById('autoRefresh').checked) {
+                autoRefreshInterval = setInterval(refreshLogs, 5000);
+            } else {
+                clearInterval(autoRefreshInterval);
+            }
+        }
+
+        document.getElementById('autoRefresh').addEventListener('change', toggleAutoRefresh);
+
+        // Initial load
+        refreshLogs();
+        toggleAutoRefresh();
+    </script>
+</body>
+</html>
