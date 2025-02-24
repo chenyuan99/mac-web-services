@@ -240,6 +240,119 @@ def get_ollama_logs():
         print(f"Error getting Ollama logs: {e}")
         return []
 
+def get_port_info():
+    try:
+        # Get network connections
+        connections = []
+        
+        # Get TCP and UDP connections with sudo for better access
+        try:
+            cmd = "lsof -i -P -n"
+            output = subprocess.check_output(cmd, shell=True).decode()
+            
+            # Skip the header line
+            lines = output.strip().split('\n')[1:]
+            
+            for line in lines:
+                parts = line.split()
+                if len(parts) < 8:
+                    continue
+                    
+                # Parse the line
+                process_name = parts[0]
+                pid = parts[1]
+                protocol = parts[4].lower()  # TCP or UDP
+                address = parts[8]
+                
+                # Parse address
+                if '->' in address:  # Connected
+                    local, remote = address.split('->')
+                    local_parts = local.rsplit(':', 1)
+                    remote_parts = remote.rsplit(':', 1)
+                    
+                    local_ip = local_parts[0] if len(local_parts) > 1 else ''
+                    local_port = local_parts[1] if len(local_parts) > 1 else ''
+                    remote_ip = remote_parts[0] if len(remote_parts) > 1 else ''
+                    remote_port = remote_parts[1] if len(remote_parts) > 1 else ''
+                    status = 'ESTABLISHED'
+                else:  # Listening
+                    local_parts = address.rsplit(':', 1)
+                    local_ip = local_parts[0] if len(local_parts) > 1 else ''
+                    local_port = local_parts[1] if len(local_parts) > 1 else ''
+                    remote_ip = ''
+                    remote_port = ''
+                    status = 'LISTEN'
+                
+                # Clean up IP addresses
+                if local_ip == '*':
+                    local_ip = '0.0.0.0'
+                if remote_ip == '*':
+                    remote_ip = '0.0.0.0'
+                
+                connection_info = {
+                    'protocol': protocol,
+                    'local_address': local_ip,
+                    'local_port': local_port,
+                    'remote_address': remote_ip,
+                    'remote_port': remote_port,
+                    'status': status,
+                    'pid': pid,
+                    'process_name': process_name
+                }
+                connections.append(connection_info)
+                
+        except subprocess.CalledProcessError as e:
+            print(f"Error running lsof command: {e}")
+            # Fallback to psutil if lsof fails
+            try:
+                tcp_connections = psutil.net_connections(kind='tcp')
+                udp_connections = psutil.net_connections(kind='udp')
+                
+                for conn in tcp_connections + udp_connections:
+                    try:
+                        process = psutil.Process(conn.pid) if conn.pid else None
+                        
+                        local_ip = conn.laddr.ip if conn.laddr else ''
+                        local_port = str(conn.laddr.port) if conn.laddr else ''
+                        
+                        remote_ip = conn.raddr.ip if conn.raddr else ''
+                        remote_port = str(conn.raddr.port) if conn.raddr else ''
+                        
+                        connection_info = {
+                            'protocol': 'tcp' if conn in tcp_connections else 'udp',
+                            'local_address': local_ip,
+                            'local_port': local_port,
+                            'remote_address': remote_ip,
+                            'remote_port': remote_port,
+                            'status': conn.status,
+                            'pid': str(conn.pid) if conn.pid else '',
+                            'process_name': process.name() if process else ''
+                        }
+                        connections.append(connection_info)
+                    except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess) as e:
+                        print(f"Error processing connection: {e}")
+                        continue
+            except Exception as e:
+                print(f"Error using psutil fallback: {e}")
+        
+        # Calculate metrics
+        metrics = {
+            'total': len(connections),
+            'listening': len([c for c in connections if c['status'] == 'LISTEN']),
+            'established': len([c for c in connections if c['status'] == 'ESTABLISHED'])
+        }
+        
+        print(f"Found {len(connections)} connections")
+        print(f"Metrics: {metrics}")
+        
+        return {
+            'ports': connections,
+            'metrics': metrics
+        }
+    except Exception as e:
+        print(f"Error in get_port_info: {e}")
+        return {'ports': [], 'metrics': {'total': 0, 'listening': 0, 'established': 0}}
+
 @app.route('/')
 def status_page():
     services_status = {}
@@ -278,6 +391,14 @@ def threads_page():
 @app.route('/api/threads')
 def api_threads():
     return jsonify(get_thread_info())
+
+@app.route('/ports')
+def ports_page():
+    return render_template('ports.html')
+
+@app.route('/api/ports')
+def api_ports():
+    return jsonify(get_port_info())
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5002)
