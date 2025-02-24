@@ -6,93 +6,123 @@
     <title>Port Monitor</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Icons', 'Helvetica Neue', sans-serif;
             line-height: 1.6;
             margin: 0;
             padding: 20px;
             background-color: #f5f5f7;
+            color: #1d1d1f;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 0 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 40px;
+        }
+        h1 {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 600;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #1d1d1f 0%, #434344 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         .nav {
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         .nav a {
             color: #007aff;
             text-decoration: none;
-            margin-right: 20px;
+            font-size: 15px;
+            font-weight: 500;
+            transition: color 0.2s ease;
         }
         .nav a:hover {
-            text-decoration: underline;
+            color: #0059ff;
         }
         .controls {
             display: flex;
-            gap: 10px;
+            gap: 15px;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             align-items: center;
         }
         .refresh-button {
-            background-color: #007aff;
+            background: #007aff;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 500;
             cursor: pointer;
-            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.15);
         }
         .refresh-button:hover {
-            background-color: #0056b3;
+            background: #0059ff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);
         }
         .ports-section {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* Important for nested flex scrolling */
         }
         .ports-table {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
         .ports-table th,
         .ports-table td {
-            padding: 12px;
+            padding: 14px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
         .ports-table th {
-            background-color: #f8f9fa;
+            background: rgba(255, 255, 255, 0.5);
             font-weight: 600;
-            color: #333;
+            color: #1d1d1f;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .ports-table tr:hover {
-            background-color: #f8f9fa;
+            background: rgba(255, 255, 255, 0.5);
         }
         .status-badge {
             display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8em;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
         }
         .status-listening {
-            background-color: #d4edda;
-            color: #155724;
+            background-color: rgba(52, 199, 89, 0.1);
+            color: #34c759;
         }
         .status-established {
-            background-color: #cce5ff;
-            color: #004085;
+            background-color: rgba(0, 122, 255, 0.1);
+            color: #007aff;
         }
         .status-closed {
-            background-color: #f8d7da;
-            color: #721c24;
+            background-color: rgba(255, 69, 58, 0.1);
+            color: #ff453a;
         }
         .filter-section {
             display: flex;
@@ -101,38 +131,95 @@
             align-items: center;
         }
         .search-input {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            width: 200px;
+            padding: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            width: 250px;
+            font-size: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            transition: all 0.2s ease;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
         }
         .filter-select {
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            font-size: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .filter-select:focus {
+            outline: none;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
         }
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         .metric-card {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 12px;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: transform 0.2s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
         }
         .metric-value {
-            font-size: 1.8em;
-            font-weight: bold;
+            font-size: 2em;
+            font-weight: 600;
             color: #007aff;
             margin: 10px 0;
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         .metric-label {
             font-size: 0.9em;
-            color: #666;
+            color: #86868b;
+            font-weight: 500;
+        }
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1d1d1f;
+                color: #f5f5f7;
+            }
+            .ports-section, .metric-card {
+                background: rgba(44, 44, 46, 0.8);
+                border-color: rgba(255, 255, 255, 0.1);
+            }
+            .ports-table th {
+                background: rgba(44, 44, 46, 0.5);
+                color: #f5f5f7;
+            }
+            .ports-table tr:hover {
+                background: rgba(44, 44, 46, 0.5);
+            }
+            .search-input, .filter-select {
+                background: rgba(44, 44, 46, 0.8);
+                border-color: rgba(255, 255, 255, 0.1);
+                color: #f5f5f7;
+            }
+            .metric-value {
+                color: #0a84ff;
+            }
+            h1 {
+                background: linear-gradient(135deg, #f5f5f7 0%, #86868b 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
         }
     </style>
 </head>
@@ -144,12 +231,6 @@
         
         <div class="header">
             <h1>Port Monitor</h1>
-            <div class="controls">
-                <button class="refresh-button" onclick="refreshPorts()">Refresh Ports</button>
-                <label>
-                    <input type="checkbox" id="autoRefresh" checked> Auto-refresh
-                </label>
-            </div>
         </div>
 
         <div class="metrics-grid">
@@ -168,18 +249,20 @@
         </div>
 
         <div class="ports-section">
+            <div class="controls">
+                <button class="refresh-button" onclick="refreshPorts()">Refresh Ports</button>
+                <label>
+                    <input type="checkbox" id="autoRefresh" checked> Auto-refresh
+                </label>
+            </div>
+            
             <div class="filter-section">
                 <input type="text" id="searchInput" class="search-input" placeholder="Search ports, processes...">
                 <select id="statusFilter" class="filter-select">
-                    <option value="all">All Status</option>
+                    <option value="">All Status</option>
                     <option value="LISTEN">Listening</option>
                     <option value="ESTABLISHED">Established</option>
                     <option value="CLOSED">Closed</option>
-                </select>
-                <select id="protocolFilter" class="filter-select">
-                    <option value="all">All Protocols</option>
-                    <option value="tcp">TCP</option>
-                    <option value="udp">UDP</option>
                 </select>
             </div>
             
@@ -205,74 +288,68 @@
 
     <script>
         let autoRefreshInterval;
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        const autoRefreshCheckbox = document.getElementById('autoRefresh');
 
-        function getStatusClass(status) {
-            switch(status.toLowerCase()) {
-                case 'listen':
-                    return 'status-listening';
-                case 'established':
-                    return 'status-established';
-                default:
-                    return 'status-closed';
-            }
-        }
-
-        function updateMetrics(data) {
-            document.getElementById('totalConnections').textContent = data.metrics.total;
-            document.getElementById('listeningPorts').textContent = data.metrics.listening;
-            document.getElementById('establishedConnections').textContent = data.metrics.established;
-        }
-
-        function filterPorts(ports) {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
-            const protocolFilter = document.getElementById('protocolFilter').value;
-
-            return ports.filter(port => {
-                const matchesSearch = (
-                    port.local_address.toLowerCase().includes(searchTerm) ||
-                    port.local_port.toString().includes(searchTerm) ||
-                    port.process_name.toLowerCase().includes(searchTerm) ||
-                    port.pid.toString().includes(searchTerm)
-                );
-
-                const matchesStatus = statusFilter === 'all' || port.status === statusFilter;
-                const matchesProtocol = protocolFilter === 'all' || port.protocol === protocolFilter;
-
-                return matchesSearch && matchesStatus && matchesProtocol;
-            });
+        function updateMetrics(metrics) {
+            document.getElementById('totalConnections').textContent = metrics.total;
+            document.getElementById('listeningPorts').textContent = metrics.listening;
+            document.getElementById('establishedConnections').textContent = metrics.established;
         }
 
         function refreshPorts() {
             fetch('/api/ports')
                 .then(response => response.json())
                 .then(data => {
-                    const tableBody = document.getElementById('portsTableBody');
-                    const filteredPorts = filterPorts(data.ports);
-                    
-                    tableBody.innerHTML = '';
-                    filteredPorts.forEach(port => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${port.protocol}</td>
-                            <td>${port.local_address}</td>
-                            <td>${port.local_port}</td>
-                            <td>${port.remote_address || '-'}</td>
-                            <td>${port.remote_port || '-'}</td>
-                            <td><span class="status-badge ${getStatusClass(port.status)}">${port.status}</span></td>
-                            <td>${port.process_name}</td>
-                            <td>${port.pid}</td>
-                        `;
-                        tableBody.appendChild(row);
-                    });
-                    
-                    updateMetrics(data);
+                    updatePortsTable(data.ports);
+                    updateMetrics(data.metrics);
                 })
                 .catch(error => console.error('Error:', error));
         }
 
+        function updatePortsTable(ports) {
+            const tbody = document.getElementById('portsTableBody');
+            tbody.innerHTML = '';
+            
+            const searchTerm = searchInput.value.toLowerCase();
+            const statusValue = statusFilter.value;
+            
+            const filteredData = ports.filter(port => {
+                const matchesSearch = (
+                    port.protocol.toLowerCase().includes(searchTerm) ||
+                    port.local_address.toLowerCase().includes(searchTerm) ||
+                    port.local_port.toString().includes(searchTerm) ||
+                    (port.remote_address && port.remote_address.toLowerCase().includes(searchTerm)) ||
+                    (port.remote_port && port.remote_port.toString().includes(searchTerm)) ||
+                    port.status.toLowerCase().includes(searchTerm) ||
+                    port.process_name.toLowerCase().includes(searchTerm) ||
+                    port.pid.toString().includes(searchTerm)
+                );
+
+                const matchesStatus = !statusValue || port.status === statusValue;
+
+                return matchesSearch && matchesStatus;
+            });
+
+            filteredData.forEach(port => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${port.protocol}</td>
+                    <td>${port.local_address}</td>
+                    <td><span class="port-number">${port.local_port}</span></td>
+                    <td>${port.remote_address || '-'}</td>
+                    <td><span class="port-number">${port.remote_port || '-'}</span></td>
+                    <td><span class="status-badge ${port.status.toLowerCase()}">${port.status}</span></td>
+                    <td><span class="process-name">${port.process_name}</span></td>
+                    <td>${port.pid}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
         function toggleAutoRefresh() {
-            if (document.getElementById('autoRefresh').checked) {
+            if (autoRefreshCheckbox.checked) {
                 autoRefreshInterval = setInterval(refreshPorts, 5000);
             } else {
                 clearInterval(autoRefreshInterval);
@@ -280,10 +357,15 @@
         }
 
         // Event listeners
-        document.getElementById('autoRefresh').addEventListener('change', toggleAutoRefresh);
-        document.getElementById('searchInput').addEventListener('input', refreshPorts);
-        document.getElementById('statusFilter').addEventListener('change', refreshPorts);
-        document.getElementById('protocolFilter').addEventListener('change', refreshPorts);
+        searchInput.addEventListener('input', () => {
+            refreshPorts();
+        });
+
+        statusFilter.addEventListener('change', () => {
+            refreshPorts();
+        });
+
+        autoRefreshCheckbox.addEventListener('change', toggleAutoRefresh);
 
         // Initial load
         refreshPorts();

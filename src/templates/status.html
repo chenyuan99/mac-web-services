@@ -6,11 +6,12 @@
     <title>Service Status</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Icons', 'Helvetica Neue', sans-serif;
             line-height: 1.6;
             margin: 0;
             padding: 20px;
             background-color: #f5f5f7;
+            color: #1d1d1f;
         }
         .container {
             max-width: 1200px;
@@ -20,87 +21,140 @@
             text-align: center;
             margin-bottom: 40px;
         }
+        h1 {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 600;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #1d1d1f 0%, #434344 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
         .status-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
         }
         .status-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: transform 0.2s ease;
+        }
+        .status-card:hover {
+            transform: translateY(-2px);
         }
         .service-name {
             font-size: 1.2em;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            color: #1d1d1f;
         }
         .status-indicator {
             display: inline-block;
-            padding: 5px 10px;
-            border-radius: 15px;
+            padding: 6px 12px;
+            border-radius: 20px;
             font-size: 0.9em;
-            margin-bottom: 10px;
+            font-weight: 500;
+            margin-bottom: 15px;
         }
         .operational {
-            background-color: #d4edda;
-            color: #155724;
+            background-color: rgba(52, 199, 89, 0.1);
+            color: #34c759;
         }
         .incident {
-            background-color: #fff3cd;
-            color: #856404;
+            background-color: rgba(255, 159, 10, 0.1);
+            color: #ff9f0a;
         }
         .outage {
-            background-color: #f8d7da;
-            color: #721c24;
+            background-color: rgba(255, 69, 58, 0.1);
+            color: #ff453a;
         }
         .status-details {
             font-size: 0.9em;
-            color: #666;
+            color: #86868b;
         }
         .refresh-button {
-            background-color: #007aff;
+            background: #007aff;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: 500;
             cursor: pointer;
+            transition: all 0.2s ease;
             text-decoration: none;
             display: inline-block;
+            box-shadow: 0 2px 8px rgba(0, 122, 255, 0.15);
         }
         .refresh-button:hover {
-            background-color: #0056b3;
+            background: #0059ff;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 122, 255, 0.25);
         }
         .controls {
             display: flex;
-            gap: 10px;
+            gap: 15px;
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         .resource-section {
-            margin: 15px 0;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 5px;
+            margin: 20px 0;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
         }
-        
         .resource-section h3 {
-            margin: 0 0 10px 0;
+            margin: 0 0 12px 0;
             font-size: 1.1em;
-            color: #333;
+            color: #1d1d1f;
+            font-weight: 600;
         }
-        
         .gpu-info {
-            margin: 10px 0;
-            padding: 10px;
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin: 12px 0;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
-        
         .gpu-info p {
-            margin: 5px 0;
+            margin: 6px 0;
+            color: #1d1d1f;
+        }
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1d1d1f;
+                color: #f5f5f7;
+            }
+            .status-card {
+                background: rgba(44, 44, 46, 0.8);
+                border-color: rgba(255, 255, 255, 0.1);
+            }
+            .service-name {
+                color: #f5f5f7;
+            }
+            .resource-section {
+                background: rgba(44, 44, 46, 0.5);
+            }
+            .resource-section h3 {
+                color: #f5f5f7;
+            }
+            .gpu-info {
+                background: rgba(44, 44, 46, 0.7);
+            }
+            .gpu-info p {
+                color: #f5f5f7;
+            }
+            h1 {
+                background: linear-gradient(135deg, #f5f5f7 0%, #86868b 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
         }
     </style>
 </head>
@@ -137,7 +191,7 @@
                                 <p>Cores: {{ status.details.cpu.cores }}</p>
                             </div>
                         </div>
-                        
+
                         <div class="resource-section">
                             <h3>Memory</h3>
                             <div class="memory-info">
@@ -146,7 +200,7 @@
                                 <p class="percent">Usage: {{ status.details.memory.percent }}</p>
                             </div>
                         </div>
-                        
+
                         {% if status.details.gpu %}
                         <div class="resource-section">
                             <h3>GPU</h3>
@@ -189,21 +243,21 @@
 
         function updateSystemResources(data) {
             // Update server time
-            document.querySelector('.server-time .current-time').textContent = 
+            document.querySelector('.server-time .current-time').textContent =
                 'Current Time: ' + data.details.server_time.current_time;
-            
+
             // Update CPU
-            document.querySelector('.cpu-info .usage').textContent = 
+            document.querySelector('.cpu-info .usage').textContent =
                 'Usage: ' + data.details.cpu.usage;
-            
+
             // Update Memory
-            document.querySelector('.memory-info .used').textContent = 
+            document.querySelector('.memory-info .used').textContent =
                 'Used: ' + data.details.memory.used;
-            document.querySelector('.memory-info .percent').textContent = 
+            document.querySelector('.memory-info .percent').textContent =
                 'Usage: ' + data.details.memory.percent;
-            
+
             // Update timestamp in data attribute for relative time
-            document.querySelector('.server-time').dataset.timestamp = 
+            document.querySelector('.server-time').dataset.timestamp =
                 data.details.server_time.timestamp;
         }
 
