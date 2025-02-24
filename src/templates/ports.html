@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Port Monitor</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f7;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            color: #007aff;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .refresh-button {
+            background-color: #007aff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .refresh-button:hover {
+            background-color: #0056b3;
+        }
+        .ports-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .ports-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .ports-table th,
+        .ports-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        .ports-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        .ports-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+        .status-listening {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-established {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        .status-closed {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .filter-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .search-input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 200px;
+        }
+        .filter-select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .metric-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #007aff;
+            margin: 10px 0;
+        }
+        .metric-label {
+            font-size: 0.9em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="/">← Back to Status Page</a>
+        </div>
+        
+        <div class="header">
+            <h1>Port Monitor</h1>
+            <div class="controls">
+                <button class="refresh-button" onclick="refreshPorts()">Refresh Ports</button>
+                <label>
+                    <input type="checkbox" id="autoRefresh" checked> Auto-refresh
+                </label>
+            </div>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Total Connections</div>
+                <div class="metric-value" id="totalConnections">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Listening Ports</div>
+                <div class="metric-value" id="listeningPorts">0</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Established Connections</div>
+                <div class="metric-value" id="establishedConnections">0</div>
+            </div>
+        </div>
+
+        <div class="ports-section">
+            <div class="filter-section">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search ports, processes...">
+                <select id="statusFilter" class="filter-select">
+                    <option value="all">All Status</option>
+                    <option value="LISTEN">Listening</option>
+                    <option value="ESTABLISHED">Established</option>
+                    <option value="CLOSED">Closed</option>
+                </select>
+                <select id="protocolFilter" class="filter-select">
+                    <option value="all">All Protocols</option>
+                    <option value="tcp">TCP</option>
+                    <option value="udp">UDP</option>
+                </select>
+            </div>
+            
+            <table class="ports-table">
+                <thead>
+                    <tr>
+                        <th>Protocol</th>
+                        <th>Local Address</th>
+                        <th>Local Port</th>
+                        <th>Remote Address</th>
+                        <th>Remote Port</th>
+                        <th>Status</th>
+                        <th>Process</th>
+                        <th>PID</th>
+                    </tr>
+                </thead>
+                <tbody id="portsTableBody">
+                    <!-- Port entries will be inserted here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let autoRefreshInterval;
+
+        function getStatusClass(status) {
+            switch(status.toLowerCase()) {
+                case 'listen':
+                    return 'status-listening';
+                case 'established':
+                    return 'status-established';
+                default:
+                    return 'status-closed';
+            }
+        }
+
+        function updateMetrics(data) {
+            document.getElementById('totalConnections').textContent = data.metrics.total;
+            document.getElementById('listeningPorts').textContent = data.metrics.listening;
+            document.getElementById('establishedConnections').textContent = data.metrics.established;
+        }
+
+        function filterPorts(ports) {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const protocolFilter = document.getElementById('protocolFilter').value;
+
+            return ports.filter(port => {
+                const matchesSearch = (
+                    port.local_address.toLowerCase().includes(searchTerm) ||
+                    port.local_port.toString().includes(searchTerm) ||
+                    port.process_name.toLowerCase().includes(searchTerm) ||
+                    port.pid.toString().includes(searchTerm)
+                );
+
+                const matchesStatus = statusFilter === 'all' || port.status === statusFilter;
+                const matchesProtocol = protocolFilter === 'all' || port.protocol === protocolFilter;
+
+                return matchesSearch && matchesStatus && matchesProtocol;
+            });
+        }
+
+        function refreshPorts() {
+            fetch('/api/ports')
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('portsTableBody');
+                    const filteredPorts = filterPorts(data.ports);
+                    
+                    tableBody.innerHTML = '';
+                    filteredPorts.forEach(port => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${port.protocol}</td>
+                            <td>${port.local_address}</td>
+                            <td>${port.local_port}</td>
+                            <td>${port.remote_address || '-'}</td>
+                            <td>${port.remote_port || '-'}</td>
+                            <td><span class="status-badge ${getStatusClass(port.status)}">${port.status}</span></td>
+                            <td>${port.process_name}</td>
+                            <td>${port.pid}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                    
+                    updateMetrics(data);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function toggleAutoRefresh() {
+            if (document.getElementById('autoRefresh').checked) {
+                autoRefreshInterval = setInterval(refreshPorts, 5000);
+            } else {
+                clearInterval(autoRefreshInterval);
+            }
+        }
+
+        // Event listeners
+        document.getElementById('autoRefresh').addEventListener('change', toggleAutoRefresh);
+        document.getElementById('searchInput').addEventListener('input', refreshPorts);
+        document.getElementById('statusFilter').addEventListener('change', refreshPorts);
+        document.getElementById('protocolFilter').addEventListener('change', refreshPorts);
+
+        // Initial load
+        refreshPorts();
+        toggleAutoRefresh();
+    </script>
+</body>
+</html>

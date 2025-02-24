@@ -85,6 +85,13 @@ A modern web application for monitoring and managing macOS services, with a focu
 - Auto-refresh capability
 - Thread lifecycle tracking
 
+### Network Port Monitoring
+- Real-time port and connection monitoring
+- TCP and UDP connection tracking
+- Process information for each connection
+- Connection status and metrics
+- Advanced filtering capabilities
+
 ## Requirements
 
 - Python 3.10+
@@ -119,6 +126,7 @@ http://localhost:5002
 3. View the status page and monitor your services.
 4. Click "View Ollama Logs" to access the logs page.
 5. Click "View Thread Monitor" to access the thread monitor page.
+6. Click "View Port Monitor" to access the port monitor page.
 
 ## Features
 
@@ -139,6 +147,14 @@ http://localhost:5002
 - Monitor thread states and metrics
 - Inspect thread stack traces
 - Track daemon vs non-daemon threads
+- Real-time updates
+
+### Port Monitor Page
+- View all active network connections
+- Monitor TCP and UDP ports
+- Track listening and established connections
+- Filter by protocol, status, or search terms
+- Process and PID information
 - Real-time updates
 
 ## Legacy Services

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thread Monitor</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f7;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            color: #007aff;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .refresh-button {
+            background-color: #007aff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .refresh-button:hover {
+            background-color: #0056b3;
+        }
+        .thread-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .thread-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .thread-name {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .thread-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .thread-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin-bottom: 8px;
+        }
+        .status-running {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-stopped {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-waiting {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .metrics-section {
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .metric-card {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #007aff;
+            margin: 10px 0;
+        }
+        .metric-label {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .stack-trace {
+            font-family: monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="nav">
+            <a href="/">← Back to Status Page</a>
+        </div>
+        
+        <div class="header">
+            <h1>Thread Monitor</h1>
+            <div class="controls">
+                <button class="refresh-button" onclick="refreshThreads()">Refresh Threads</button>
+                <label>
+                    <input type="checkbox" id="autoRefresh" checked> Auto-refresh
+                </label>
+            </div>
+        </div>
+
+        <div class="metrics-section">
+            <h2>Thread Metrics</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-label">Total Threads</div>
+                    <div class="metric-value" id="totalThreads">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Active Threads</div>
+                    <div class="metric-value" id="activeThreads">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Daemon Threads</div>
+                    <div class="metric-value" id="daemonThreads">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Peak Threads</div>
+                    <div class="metric-value" id="peakThreads">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="threadGrid" class="thread-grid">
+            <!-- Thread cards will be inserted here -->
+        </div>
+    </div>
+
+    <script>
+        let autoRefreshInterval;
+        const threadStates = new Map();
+        let peakThreadCount = 0;
+
+        function getStatusClass(status) {
+            switch(status.toLowerCase()) {
+                case 'running':
+                    return 'status-running';
+                case 'stopped':
+                    return 'status-stopped';
+                default:
+                    return 'status-waiting';
+            }
+        }
+
+        function createThreadCard(thread) {
+            const card = document.createElement('div');
+            card.className = 'thread-card';
+            card.innerHTML = `
+                <div class="thread-name">${thread.name}</div>
+                <div class="thread-status ${getStatusClass(thread.status)}">${thread.status}</div>
+                <div class="thread-details">
+                    <p>ID: ${thread.id}</p>
+                    <p>Daemon: ${thread.daemon}</p>
+                    <p>Native ID: ${thread.native_id}</p>
+                    ${thread.stack_trace ? `
+                        <div class="stack-trace">${thread.stack_trace}</div>
+                    ` : ''}
+                </div>
+            `;
+            return card;
+        }
+
+        function updateMetrics(metrics) {
+            document.getElementById('totalThreads').textContent = metrics.total;
+            document.getElementById('activeThreads').textContent = metrics.active;
+            document.getElementById('daemonThreads').textContent = metrics.daemon;
+            
+            // Update peak thread count
+            peakThreadCount = Math.max(peakThreadCount, metrics.total);
+            document.getElementById('peakThreads').textContent = peakThreadCount;
+        }
+
+        function refreshThreads() {
+            fetch('/api/threads')
+                .then(response => response.json())
+                .then(data => {
+                    const threadGrid = document.getElementById('threadGrid');
+                    threadGrid.innerHTML = '';
+                    
+                    data.threads.forEach(thread => {
+                        threadGrid.appendChild(createThreadCard(thread));
+                    });
+                    
+                    updateMetrics(data.metrics);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function toggleAutoRefresh() {
+            if (document.getElementById('autoRefresh').checked) {
+                autoRefreshInterval = setInterval(refreshThreads, 2000);
+            } else {
+                clearInterval(autoRefreshInterval);
+            }
+        }
+
+        document.getElementById('autoRefresh').addEventListener('change', toggleAutoRefresh);
+
+        // Initial load
+        refreshThreads();
+        toggleAutoRefresh();
+    </script>
+</body>
+</html>
