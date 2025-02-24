@@ -9,6 +9,9 @@ import json
 import re
 import pytz
 from collections import deque
+import threading
+import traceback
+import sys
 
 app = Flask(__name__)
 
@@ -134,6 +137,34 @@ def get_system_metrics():
         }
     }
 
+def get_thread_info():
+    threads = []
+    for thread in threading.enumerate():
+        # Get thread stack trace
+        frame = sys._current_frames().get(thread.ident)
+        stack_trace = None
+        if frame:
+            stack_trace = ''.join(traceback.format_stack(frame))
+        
+        thread_info = {
+            'id': thread.ident,
+            'name': thread.name,
+            'daemon': thread.daemon,
+            'native_id': thread.native_id,
+            'status': 'running' if thread.is_alive() else 'stopped',
+            'stack_trace': stack_trace
+        }
+        threads.append(thread_info)
+    
+    # Get thread metrics
+    metrics = {
+        'total': threading.active_count(),
+        'active': len([t for t in threading.enumerate() if t.is_alive()]),
+        'daemon': len([t for t in threading.enumerate() if t.daemon]),
+    }
+    
+    return {'threads': threads, 'metrics': metrics}
+
 def check_ollama_status(url):
     try:
         start_time = time.time()
@@ -239,6 +270,14 @@ def logs_page():
 def api_logs():
     logs = get_ollama_logs()
     return jsonify({'logs': logs})
+
+@app.route('/threads')
+def threads_page():
+    return render_template('threads.html')
+
+@app.route('/api/threads')
+def api_threads():
+    return jsonify(get_thread_info())
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5002)

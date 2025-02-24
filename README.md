@@ -78,6 +78,13 @@ A modern web application for monitoring and managing macOS services, with a focu
 - GPU information for Mac (integrated and discrete)
 - Server time with timezone information
 
+### Thread Monitoring
+- Real-time thread monitoring
+- Thread status and metrics
+- Stack trace visualization
+- Auto-refresh capability
+- Thread lifecycle tracking
+
 ## Requirements
 
 - Python 3.10+
@@ -111,6 +118,7 @@ http://localhost:5002
 
 3. View the status page and monitor your services.
 4. Click "View Ollama Logs" to access the logs page.
+5. Click "View Thread Monitor" to access the thread monitor page.
 
 ## Features
 
@@ -125,6 +133,13 @@ http://localhost:5002
 - Auto-scroll functionality
 - Real-time log updates
 - Configurable refresh rate
+
+### Thread Monitor Page
+- View all active threads
+- Monitor thread states and metrics
+- Inspect thread stack traces
+- Track daemon vs non-daemon threads
+- Real-time updates
 
 ## Legacy Services
 
